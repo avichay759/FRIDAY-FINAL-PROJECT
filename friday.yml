@@ -7,46 +7,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python_version: '3.10'
-
-      - name: Install Dependencies
+      - name: Setup DNA Files
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential openjdk-17-jdk python3-dev libffi-dev libssl-dev
-          pip install --upgrade pip
-          pip install buildozer cython==0.29.33 kivy
-
-      - name: Create DNA Files
-        run: |
-          echo "from kivy.app import App
+          cat <<EOF > main.py
+          from kivy.app import App
           from kivy.uix.button import Button
           class Friday(App):
               def build(self):
                   return Button(text='FRIDAY CORE ACTIVE', background_color=(1,0,0,1))
-          Friday().run()" > main.py
-          echo "[app]
+          Friday().run()
+          EOF
+
+          cat <<EOF > buildozer.spec
+          [app]
           title = FRIDAY
           package.name = friday.core
           package.domain = org.boss
           source.dir = .
           version = 1.0
           requirements = python3,kivy
-          android.permissions = SYSTEM_ALERT_WINDOW,RECORD_AUDIO,INTERNET,WAKE_LOCK
+          android.permissions = SYSTEM_ALERT_WINDOW,RECORD_AUDIO,INTERNET,WAKE_LOCK,FOREGROUND_SERVICE
           android.archs = arm64-v8a
-          android.api = 33" > buildozer.spec
+          android.api = 33
+          EOF
 
       - name: Build APK
         run: |
-          # אישור רישיונות אוטומטי כדי שלא יתקע
-          mkdir -p ~/.android
-          touch ~/.android/repositories.cfg
+          sudo apt-get update
+          sudo apt-get install -y build-essential openjdk-17-jdk python3-dev libffi-dev libssl-dev
+          pip install buildozer cython==0.29.33
           yes | buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: FRIDAY_INSTALLER
+          name: FRIDAY_INSTALL_FILE
           path: bin/*.apk
