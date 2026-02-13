@@ -1,0 +1,43 @@
+name: FRIDAY_CORE_GENERATOR
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Create DNA Files
+        run: |
+          # יצירת קוד הליבה האדומה
+          echo "from kivy.app import App
+          from kivy.uix.button import Button
+          class Friday(App):
+              def build(self):
+                  return Button(text='FRIDAY CORE ACTIVE', background_color=(1,0,0,1))
+          Friday().run()" > main.py
+          
+          # יצירת הגדרות ה-APK (הרשאות, הגנה, רקע)
+          echo "[app]
+          title = FRIDAY
+          package.name = friday.core
+          package.domain = org.boss
+          source.dir = .
+          version = 1.0
+          requirements = python3,kivy
+          android.permissions = SYSTEM_ALERT_WINDOW,RECORD_AUDIO,INTERNET,WAKE_LOCK,FOREGROUND_SERVICE
+          android.archs = arm64-v8a
+          android.api = 33" > buildozer.spec
+
+      - name: Build APK (The Factory)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git openjdk-17-jdk python3-dev libffi-dev libssl-dev
+          pip install buildozer cython==0.29.33
+          yes | buildozer android debug
+
+      - name: Deliver to Boss
+        uses: actions/upload-artifact@v3
+        with:
+          name: FRIDAY_INSTALLER
+          path: bin/*.apk
